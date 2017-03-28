@@ -50,6 +50,8 @@ var GoogleMaps = (function () {
         this.autoUpdateBounds = false;
         this.mapType = 'ROADMAP';
         this.options = {};
+        this.drawEnabled = false;
+        this.drawMode = 'MARKER';
         this.map = null;
         this._renderedMarkers = [];
         this._markersSubscription = null;
@@ -57,6 +59,7 @@ var GoogleMaps = (function () {
         this._mapPromise = null;
         this._mapResolve = null;
         this._locationByAddressMarkers = [];
+        this.drawingManager = null;
         this.element = element;
         this.taskQueue = taskQueue;
         this.config = config;
@@ -439,6 +442,66 @@ var GoogleMaps = (function () {
             });
         });
     };
+    GoogleMaps.prototype.initDrawingManager = function (options) {
+        var _this = this;
+        if (options === void 0) { options = {}; }
+        return this._mapPromise.then(function () {
+            if (_this.drawingManager)
+                return Promise.resolve();
+            var config = Object.assign({}, {
+                drawingMode: _this.getOverlayType(_this.drawMode),
+                drawingControl: _this.drawEnabled
+            }, options);
+            _this.drawingManager = new window.google.maps.drawing.DrawingManager(config);
+            return Promise.resolve();
+        });
+    };
+    GoogleMaps.prototype.destroyDrawingManager = function () {
+        if (!this.drawingManager)
+            return;
+        this.drawingManager.setMap(null);
+        this.drawingManager = null;
+    };
+    GoogleMaps.prototype.getOverlayType = function (type) {
+        if (type === void 0) { type = ''; }
+        if (type.toUpperCase() === 'POLYGON') {
+            return window.google.maps.drawing.OverlayType.POLYGON;
+        }
+        else if (type.toUpperCase() === 'POLYLINE') {
+            return window.google.maps.drawing.OverlayType.POLYLINE;
+        }
+        else if (type.toUpperCase() === 'RECTANGLE') {
+            return window.google.maps.drawing.OverlayType.RECTANGLE;
+        }
+        else if (type.toUpperCase() === 'CIRCLE') {
+            return window.google.maps.drawing.OverlayType.CIRCLE;
+        }
+        else {
+            return window.google.maps.drawing.OverlayType.MARKER;
+        }
+    };
+    GoogleMaps.prototype.drawEnabledChanged = function (newval, oldval) {
+        var _this = this;
+        this.initDrawingManager()
+            .then(function () {
+            if (newval && !oldval) {
+                _this.drawingManager.setMap(_this.map);
+            }
+            else if (oldval && !newval) {
+                _this.drawingManager.setMap(null);
+            }
+        });
+    };
+    GoogleMaps.prototype.drawModeChanged = function (newval) {
+        var _this = this;
+        if (newval === void 0) { newval = ''; }
+        this.initDrawingManager()
+            .then(function () {
+            _this.drawingManager.setOptions({
+                drawingMode: _this.getOverlayType(newval)
+            });
+        });
+    };
     return GoogleMaps;
 }());
 __decorate([
@@ -481,6 +544,14 @@ __decorate([
     bindable,
     __metadata("design:type", Object)
 ], GoogleMaps.prototype, "mapLoaded", void 0);
+__decorate([
+    bindable,
+    __metadata("design:type", Boolean)
+], GoogleMaps.prototype, "drawEnabled", void 0);
+__decorate([
+    bindable,
+    __metadata("design:type", Object)
+], GoogleMaps.prototype, "drawMode", void 0);
 GoogleMaps = __decorate([
     noView(),
     customElement('google-map'),

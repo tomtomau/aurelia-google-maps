@@ -72,6 +72,8 @@ export class GoogleMaps {
     @bindable mapType = 'ROADMAP';
     @bindable options = {};
     @bindable mapLoaded: any;
+    @bindable drawEnabled: boolean = false;
+    @bindable drawMode = 'MARKER';
 
     public map: any = null;
     public _renderedMarkers: any = [];
@@ -80,6 +82,7 @@ export class GoogleMaps {
     public _mapPromise: Promise<any> | any = null;
     public _mapResolve: Promise<any> | any = null;
     public _locationByAddressMarkers: any = [];
+    public drawingManager: any = null;
 
     constructor(element: Element, taskQueue: TaskQueue, config: Configure, bindingEngine: BindingEngine, eventAggregator: EventAggregator, googleMapsApi: GoogleMapsAPI) {
         this.element = element;
@@ -603,5 +606,74 @@ export class GoogleMaps {
                 (<any>window).google.maps.event.trigger(this.map, 'resize');
             });
         });
+    }
+
+    /*************************************************************************
+     * Google Maps Drawing Manager
+     * The below methods are related to the drawing manager, and exposing some
+     * of the Google Maps Drawing API out
+     *************************************************************************/
+
+    /**
+     * Initialize the drawing manager
+     * 
+     * @param options - the option object passed into the drawing manager
+     */
+    initDrawingManager(options: any = {}) {
+        return this._mapPromise.then(() => {
+            // If its been initialized, we don't need to do so anymore
+            if (this.drawingManager) return Promise.resolve();
+            const config = Object.assign({}, {
+                drawingMode: this.getOverlayType(this.drawMode),
+                drawingControl: this.drawEnabled
+            }, options);
+            this.drawingManager = new (<any>window).google.maps.drawing.DrawingManager(config);
+            return Promise.resolve();
+        });
+    }
+
+    /**
+     * Destroy the drawing manager when no longer required
+     */
+    destroyDrawingManager() {
+        // Has not been initialized or has been destroyed, just ignore
+        if (!this.drawingManager) return;
+        // Remove the map and then remove the reference
+        this.drawingManager.setMap(null);
+        this.drawingManager = null;
+    }
+
+    getOverlayType(type: any = '') {
+        if (type.toUpperCase() === 'POLYGON') {
+            return (<any>window).google.maps.drawing.OverlayType.POLYGON;
+        } else if (type.toUpperCase() === 'POLYLINE') {
+            return (<any>window).google.maps.drawing.OverlayType.POLYLINE;
+        } else if (type.toUpperCase() === 'RECTANGLE') {
+            return (<any>window).google.maps.drawing.OverlayType.RECTANGLE;
+        } else if (type.toUpperCase() === 'CIRCLE') {
+            return (<any>window).google.maps.drawing.OverlayType.CIRCLE;
+        } else {
+            return (<any>window).google.maps.drawing.OverlayType.MARKER;
+        }
+    }
+
+    drawEnabledChanged(newval: any, oldval: any) {
+        this.initDrawingManager()
+            .then(() => {
+                if (newval && !oldval) {
+                    this.drawingManager.setMap(this.map);
+                } else if (oldval && !newval) {
+                    this.drawingManager.setMap(null);
+                }
+            });
+    }
+
+    drawModeChanged(newval: any = '') {
+        this.initDrawingManager()
+            .then(() => {
+                this.drawingManager.setOptions({
+                    drawingMode: this.getOverlayType(newval)
+                });
+            });
     }
 }
