@@ -32,6 +32,7 @@ var MARKERMOUSEOVER = GM + ":marker:mouse_over";
 var MARKERMOUSEOUT = GM + ":marker:mouse_out";
 var APILOADED = GM + ":api:loaded";
 var LOCATIONADDED = GM + ":marker:added";
+var OVERLAYCOMPLETE = GM + ":draw:overlaycomplete";
 var logger = getLogger('aurelia-google-maps');
 var isAddressMarker = function (marker) {
     return marker.address !== undefined;
@@ -52,6 +53,7 @@ var GoogleMaps = (function () {
         this.options = {};
         this.drawEnabled = false;
         this.drawMode = 'MARKER';
+        this.drawOverlayCompleteEvent = null;
         this.map = null;
         this._renderedMarkers = [];
         this._markersSubscription = null;
@@ -453,6 +455,22 @@ var GoogleMaps = (function () {
                 drawingControl: _this.drawEnabled
             }, options);
             _this.drawingManager = new window.google.maps.drawing.DrawingManager(config);
+            _this.drawingManager.addListener('overlaycomplete', function (evt) {
+                var changeEvent;
+                Object.assign(evt, { encode: _this.encodePaths(evt.overlay.getPath()) });
+                if (window.CustomEvent) {
+                    changeEvent = new CustomEvent('map-overlay-complete', {
+                        detail: evt,
+                        bubbles: true
+                    });
+                }
+                else {
+                    changeEvent = document.createEvent('CustomEvent');
+                    changeEvent.initCustomEvent('map-overlay-complete', true, true, { data: evt });
+                }
+                _this.element.dispatchEvent(changeEvent);
+                _this.eventAggregator.publish(OVERLAYCOMPLETE, evt);
+            });
             return Promise.resolve();
         });
     };
@@ -501,6 +519,10 @@ var GoogleMaps = (function () {
                 drawingMode: _this.getOverlayType(newval)
             });
         });
+    };
+    GoogleMaps.prototype.encodePaths = function (path) {
+        console.log('starting encoding...');
+        return window.google.maps.geometry.encoding.encodePath(path);
     };
     return GoogleMaps;
 }());
@@ -552,6 +574,10 @@ __decorate([
     bindable,
     __metadata("design:type", Object)
 ], GoogleMaps.prototype, "drawMode", void 0);
+__decorate([
+    bindable,
+    __metadata("design:type", Object)
+], GoogleMaps.prototype, "drawOverlayCompleteEvent", void 0);
 GoogleMaps = __decorate([
     noView(),
     customElement('google-map'),

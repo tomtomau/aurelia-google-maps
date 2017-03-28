@@ -45,6 +45,7 @@ export declare class GoogleMaps {
     mapLoaded: any;
     drawEnabled: boolean;
     drawMode: string;
+    drawOverlayCompleteEvent: any;
     map: any;
     _renderedMarkers: any;
     _markersSubscription: any;
@@ -84,4 +85,5 @@ export declare class GoogleMaps {
     getOverlayType(type?: any): any;
     drawEnabledChanged(newval: any, oldval: any): void;
     drawModeChanged(newval?: any): void;
+    encodePaths(path: any): any;
 }

@@ -18,7 +18,7 @@ System.register(["aurelia-dependency-injection", "aurelia-templating", "aurelia-
         if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
     };
     var __moduleName = context_1 && context_1.id;
-    var aurelia_dependency_injection_1, aurelia_templating_1, aurelia_task_queue_1, aurelia_binding_1, aurelia_event_aggregator_1, aurelia_logging_1, configure_1, google_maps_api_1, GM, BOUNDSCHANGED, CLICK, INFOWINDOWDOMREADY, MARKERCLICK, MARKERMOUSEOVER, MARKERMOUSEOUT, APILOADED, LOCATIONADDED, logger, isAddressMarker, isLatLongMarker, GoogleMaps;
+    var aurelia_dependency_injection_1, aurelia_templating_1, aurelia_task_queue_1, aurelia_binding_1, aurelia_event_aggregator_1, aurelia_logging_1, configure_1, google_maps_api_1, GM, BOUNDSCHANGED, CLICK, INFOWINDOWDOMREADY, MARKERCLICK, MARKERMOUSEOVER, MARKERMOUSEOUT, APILOADED, LOCATIONADDED, OVERLAYCOMPLETE, logger, isAddressMarker, isLatLongMarker, GoogleMaps;
     return {
         setters: [
             function (aurelia_dependency_injection_1_1) {
@@ -56,6 +56,7 @@ System.register(["aurelia-dependency-injection", "aurelia-templating", "aurelia-
             MARKERMOUSEOUT = GM + ":marker:mouse_out";
             APILOADED = GM + ":api:loaded";
             LOCATIONADDED = GM + ":marker:added";
+            OVERLAYCOMPLETE = GM + ":draw:overlaycomplete";
             logger = aurelia_logging_1.getLogger('aurelia-google-maps');
             isAddressMarker = function (marker) {
                 return marker.address !== undefined;
@@ -76,6 +77,7 @@ System.register(["aurelia-dependency-injection", "aurelia-templating", "aurelia-
                     this.options = {};
                     this.drawEnabled = false;
                     this.drawMode = 'MARKER';
+                    this.drawOverlayCompleteEvent = null;
                     this.map = null;
                     this._renderedMarkers = [];
                     this._markersSubscription = null;
@@ -477,6 +479,22 @@ System.register(["aurelia-dependency-injection", "aurelia-templating", "aurelia-
                             drawingControl: _this.drawEnabled
                         }, options);
                         _this.drawingManager = new window.google.maps.drawing.DrawingManager(config);
+                        _this.drawingManager.addListener('overlaycomplete', function (evt) {
+                            var changeEvent;
+                            Object.assign(evt, { encode: _this.encodePaths(evt.overlay.getPath()) });
+                            if (window.CustomEvent) {
+                                changeEvent = new CustomEvent('map-overlay-complete', {
+                                    detail: evt,
+                                    bubbles: true
+                                });
+                            }
+                            else {
+                                changeEvent = document.createEvent('CustomEvent');
+                                changeEvent.initCustomEvent('map-overlay-complete', true, true, { data: evt });
+                            }
+                            _this.element.dispatchEvent(changeEvent);
+                            _this.eventAggregator.publish(OVERLAYCOMPLETE, evt);
+                        });
                         return Promise.resolve();
                     });
                 };
@@ -525,6 +543,10 @@ System.register(["aurelia-dependency-injection", "aurelia-templating", "aurelia-
                             drawingMode: _this.getOverlayType(newval)
                         });
                     });
+                };
+                GoogleMaps.prototype.encodePaths = function (path) {
+                    console.log('starting encoding...');
+                    return window.google.maps.geometry.encoding.encodePath(path);
                 };
                 return GoogleMaps;
             }());
@@ -576,6 +598,10 @@ System.register(["aurelia-dependency-injection", "aurelia-templating", "aurelia-
                 aurelia_templating_1.bindable,
                 __metadata("design:type", Object)
             ], GoogleMaps.prototype, "drawMode", void 0);
+            __decorate([
+                aurelia_templating_1.bindable,
+                __metadata("design:type", Object)
+            ], GoogleMaps.prototype, "drawOverlayCompleteEvent", void 0);
             GoogleMaps = __decorate([
                 aurelia_templating_1.noView(),
                 aurelia_templating_1.customElement('google-map'),

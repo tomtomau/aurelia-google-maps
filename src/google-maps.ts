@@ -17,6 +17,7 @@ const MARKERMOUSEOVER = `${GM}:marker:mouse_over`;
 const MARKERMOUSEOUT = `${GM}:marker:mouse_out`;
 const APILOADED = `${GM}:api:loaded`;
 const LOCATIONADDED = `${GM}:marker:added`;
+const OVERLAYCOMPLETE = `${GM}:draw:overlaycomplete`;
 const logger = getLogger('aurelia-google-maps');
 
 declare let google: any;
@@ -74,6 +75,7 @@ export class GoogleMaps {
     @bindable mapLoaded: any;
     @bindable drawEnabled: boolean = false;
     @bindable drawMode = 'MARKER';
+    @bindable drawOverlayCompleteEvent = null;
 
     public map: any = null;
     public _renderedMarkers: any = [];
@@ -628,6 +630,25 @@ export class GoogleMaps {
                 drawingControl: this.drawEnabled
             }, options);
             this.drawingManager = new (<any>window).google.maps.drawing.DrawingManager(config);
+
+            // Add Event listeners and forward them to callbacks and EA
+            this.drawingManager.addListener('overlaycomplete', evt => {
+                let changeEvent;
+                // Add the encoded polyline to the event
+                Object.assign(evt, { encode: this.encodePath(evt.overlay.getPath()) });
+                if ((<any>window).CustomEvent) {
+                    changeEvent = new CustomEvent('map-overlay-complete', {
+                        detail: evt,
+                        bubbles: true
+                    });
+                } else {
+                    changeEvent = document.createEvent('CustomEvent');
+                    changeEvent.initCustomEvent('map-overlay-complete', true, true, { data: evt });
+                }
+
+                this.element.dispatchEvent(changeEvent);
+                this.eventAggregator.publish(OVERLAYCOMPLETE, evt);
+            });
             return Promise.resolve();
         });
     }
@@ -643,6 +664,10 @@ export class GoogleMaps {
         this.drawingManager = null;
     }
 
+    /**
+     * Get the given constant that Google's library uses. Defaults to MARKER
+     * @param type 
+     */
     getOverlayType(type: any = '') {
         if (type.toUpperCase() === 'POLYGON') {
             return (<any>window).google.maps.drawing.OverlayType.POLYGON;
@@ -657,6 +682,10 @@ export class GoogleMaps {
         }
     }
 
+    /**
+     * Update the editing state, called by aurelia binding
+     * @param newval 
+     */
     drawEnabledChanged(newval: any, oldval: any) {
         this.initDrawingManager()
             .then(() => {
@@ -668,6 +697,10 @@ export class GoogleMaps {
             });
     }
 
+    /**
+     * Update the drawing mode, called by aurelia binding
+     * @param newval 
+     */
     drawModeChanged(newval: any = '') {
         this.initDrawingManager()
             .then(() => {
@@ -675,5 +708,14 @@ export class GoogleMaps {
                     drawingMode: this.getOverlayType(newval)
                 });
             });
+    }
+
+    /**
+     * Encode the given path to be a Polyline encoded string
+     * more info: https://developers.google.com/maps/documentation/utilities/polylineutility
+     * @param path
+     */
+    encodePath(path) {
+        return (<any>window).google.maps.geometry.encoding.encodePath(path);
     }
 }
