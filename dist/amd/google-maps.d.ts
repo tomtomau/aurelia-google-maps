@@ -85,5 +85,5 @@ export declare class GoogleMaps {
     getOverlayType(type?: any): any;
     drawEnabledChanged(newval: any, oldval: any): void;
     drawModeChanged(newval?: any): void;
-    encodePaths(path: any): any;
+    encodePath(path: any): any;
 }

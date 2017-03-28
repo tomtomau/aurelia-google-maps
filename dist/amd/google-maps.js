@@ -452,7 +452,7 @@ define(["require", "exports", "aurelia-dependency-injection", "aurelia-templatin
                 _this.drawingManager = new window.google.maps.drawing.DrawingManager(config);
                 _this.drawingManager.addListener('overlaycomplete', function (evt) {
                     var changeEvent;
-                    Object.assign(evt, { encode: _this.encodePaths(evt.overlay.getPath()) });
+                    Object.assign(evt, { encode: _this.encodePath(evt.overlay.getPath()) });
                     if (window.CustomEvent) {
                         changeEvent = new CustomEvent('map-overlay-complete', {
                             detail: evt,
@@ -515,8 +515,7 @@ define(["require", "exports", "aurelia-dependency-injection", "aurelia-templatin
                 });
             });
         };
-        GoogleMaps.prototype.encodePaths = function (path) {
-            console.log('starting encoding...');
+        GoogleMaps.prototype.encodePath = function (path) {
             return window.google.maps.geometry.encoding.encodePath(path);
         };
         return GoogleMaps;
