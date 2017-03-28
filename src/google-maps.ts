@@ -6,7 +6,7 @@ import { EventAggregator } from 'aurelia-event-aggregator';
 import { getLogger } from 'aurelia-logging';
 
 import { Configure } from './configure';
-import {GoogleMapsAPI} from './google-maps-api'
+import { GoogleMapsAPI } from './google-maps-api'
 
 const GM = 'googlemap';
 const BOUNDSCHANGED = `${GM}:bounds_changed`;
@@ -625,13 +625,15 @@ export class GoogleMaps {
         return this._mapPromise.then(() => {
             // If its been initialized, we don't need to do so anymore
             if (this.drawingManager) return Promise.resolve();
+            // Set the config defaults, and override if we were given any configs
             const config = Object.assign({}, {
                 drawingMode: this.getOverlayType(this.drawMode),
                 drawingControl: this.drawEnabled
             }, options);
             this.drawingManager = new (<any>window).google.maps.drawing.DrawingManager(config);
 
-            // Add Event listeners and forward them to callbacks and EA
+            // Add Event listeners and forward them to as a custom event on the
+            // element and to the Event Aggregator
             this.drawingManager.addListener('overlaycomplete', evt => {
                 let changeEvent;
                 // Add the encoded polyline to the event
