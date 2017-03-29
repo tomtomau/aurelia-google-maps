@@ -46,6 +46,7 @@ export declare class GoogleMaps {
     drawEnabled: boolean;
     drawMode: string;
     drawOverlayCompleteEvent: any;
+    polygons: any;
     map: any;
     _renderedMarkers: any;
     _markersSubscription: any;
@@ -54,6 +55,7 @@ export declare class GoogleMaps {
     _mapResolve: Promise<any> | any;
     _locationByAddressMarkers: any;
     drawingManager: any;
+    _renderedPolygons: any;
     constructor(element: Element, taskQueue: TaskQueue, config: Configure, bindingEngine: BindingEngine, eventAggregator: EventAggregator, googleMapsApi: GoogleMapsAPI);
     clearMarkers(): void;
     attached(): void;
@@ -85,5 +87,8 @@ export declare class GoogleMaps {
     getOverlayType(type?: any): any;
     drawEnabledChanged(newval: any, oldval: any): void;
     drawModeChanged(newval?: any): void;
-    encodePath(path: any): any;
+    encodePath(path?: any): any;
+    decodePath(polyline: string): any;
+    renderPolygon(paths?: any): void;
+    renderPolygonFromPolyString(poly: string): void;
 }

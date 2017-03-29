@@ -76,6 +76,7 @@ export class GoogleMaps {
     @bindable drawEnabled: boolean = false;
     @bindable drawMode = 'MARKER';
     @bindable drawOverlayCompleteEvent = null;
+    @bindable polygons: any = [];
 
     public map: any = null;
     public _renderedMarkers: any = [];
@@ -85,6 +86,7 @@ export class GoogleMaps {
     public _mapResolve: Promise<any> | any = null;
     public _locationByAddressMarkers: any = [];
     public drawingManager: any = null;
+    public _renderedPolygons: any = [];
 
     constructor(element: Element, taskQueue: TaskQueue, config: Configure, bindingEngine: BindingEngine, eventAggregator: EventAggregator, googleMapsApi: GoogleMapsAPI) {
         this.element = element;
@@ -695,6 +697,7 @@ export class GoogleMaps {
             .then(() => {
                 if (newval && !oldval) {
                     this.drawingManager.setMap(this.map);
+                    this.renderPolygon();
                 } else if (oldval && !newval) {
                     this.drawingManager.setMap(null);
                 }
@@ -714,12 +717,52 @@ export class GoogleMaps {
             });
     }
 
+    /*************************************************************************
+     * POLYLINE ENCODING
+     *************************************************************************/
+
     /**
      * Encode the given path to be a Polyline encoded string
      * more info: https://developers.google.com/maps/documentation/utilities/polylineutility
      * @param path
      */
-    encodePath(path) {
+    encodePath(path: any = []) {
         return (<any>window).google.maps.geometry.encoding.encodePath(path);
+    }
+
+    /**
+     * Decode the given Polyline encoded string to be an arry of Paths
+     * more info: https://developers.google.com/maps/documentation/utilities/polylineutility
+     * @param polyline
+     */
+    decodePath(polyline: string) {
+        return (<any>window).google.maps.geometry.encoding.decodePath(polyline);
+    }
+
+    /*************************************************************************
+     * POLYGONS
+     *************************************************************************/
+
+    /**
+     * Render a single polygon on the map and add it to the _renderedPolygons
+     * array.
+     * @param paths - paths defining a polygon
+     */
+    renderPolygon(paths: any = [])  {
+        let polygon = new (<any>window).google.maps.Polygon({
+            paths
+        });
+
+        polygon.setMap(this.map);
+        this._renderedPolygons.push(polygon);
+    }
+
+    /**
+     * Render the polygon from an encoded polyline string
+     * @param poly
+     */
+    renderPolygonFromPolyString(poly: string) {
+        let paths = this.decodePath(poly);
+        this.renderPolygon(paths);
     }
 }

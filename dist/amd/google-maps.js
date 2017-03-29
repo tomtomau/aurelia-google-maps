@@ -49,6 +49,7 @@ define(["require", "exports", "aurelia-dependency-injection", "aurelia-templatin
             this.drawEnabled = false;
             this.drawMode = 'MARKER';
             this.drawOverlayCompleteEvent = null;
+            this.polygons = [];
             this.map = null;
             this._renderedMarkers = [];
             this._markersSubscription = null;
@@ -57,6 +58,7 @@ define(["require", "exports", "aurelia-dependency-injection", "aurelia-templatin
             this._mapResolve = null;
             this._locationByAddressMarkers = [];
             this.drawingManager = null;
+            this._renderedPolygons = [];
             this.element = element;
             this.taskQueue = taskQueue;
             this.config = config;
@@ -498,6 +500,7 @@ define(["require", "exports", "aurelia-dependency-injection", "aurelia-templatin
                 .then(function () {
                 if (newval && !oldval) {
                     _this.drawingManager.setMap(_this.map);
+                    _this.renderPolygon();
                 }
                 else if (oldval && !newval) {
                     _this.drawingManager.setMap(null);
@@ -515,7 +518,23 @@ define(["require", "exports", "aurelia-dependency-injection", "aurelia-templatin
             });
         };
         GoogleMaps.prototype.encodePath = function (path) {
+            if (path === void 0) { path = []; }
             return window.google.maps.geometry.encoding.encodePath(path);
+        };
+        GoogleMaps.prototype.decodePath = function (polyline) {
+            return window.google.maps.geometry.encoding.decodePath(polyline);
+        };
+        GoogleMaps.prototype.renderPolygon = function (paths) {
+            if (paths === void 0) { paths = []; }
+            var polygon = new window.google.maps.Polygon({
+                paths: paths
+            });
+            polygon.setMap(this.map);
+            this._renderedPolygons.push(polygon);
+        };
+        GoogleMaps.prototype.renderPolygonFromPolyString = function (poly) {
+            var paths = this.decodePath(poly);
+            this.renderPolygon(paths);
         };
         return GoogleMaps;
     }());
@@ -571,6 +590,10 @@ define(["require", "exports", "aurelia-dependency-injection", "aurelia-templatin
         aurelia_templating_1.bindable,
         __metadata("design:type", Object)
     ], GoogleMaps.prototype, "drawOverlayCompleteEvent", void 0);
+    __decorate([
+        aurelia_templating_1.bindable,
+        __metadata("design:type", Object)
+    ], GoogleMaps.prototype, "polygons", void 0);
     GoogleMaps = __decorate([
         aurelia_templating_1.noView(),
         aurelia_templating_1.customElement('google-map'),
