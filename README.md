@@ -231,7 +231,11 @@ One of the drawing events has been exposed to the element as a `CustomEvent` and
 <google-map map-overlay-complete.delegate="callback($event)"></google-map>
 ```
 
-The event object is the same as given [here](https://developers.google.com/maps/documentation/javascript/reference#OverlayCompleteEvent) with the addition of the `encoded` variable. This is the encoded polyline (you can play around with it [here](https://developers.google.com/maps/documentation/utilities/polylineutility))
+The event object is the same as given [here](https://developers.google.com/maps/documentation/javascript/reference#OverlayCompleteEvent) with the addition of the `encoded` variable. This is the encoded polyline (you can play around with it [here](https://developers.google.com/maps/documentation/utilities/polylineutility)).
+
+In addition to the `map-overlay-complete` event, an event is also propagated through Aurelia's Event Aggregator:
+
+* `googlemap:draw:overlaycomplete` - Emitted when an overlay drawing has been completed
 
 ## Supported Properties
 

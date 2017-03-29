@@ -506,20 +506,19 @@ System.register(["aurelia-dependency-injection", "aurelia-templating", "aurelia-
                 };
                 GoogleMaps.prototype.getOverlayType = function (type) {
                     if (type === void 0) { type = ''; }
-                    if (type.toUpperCase() === 'POLYGON') {
-                        return window.google.maps.drawing.OverlayType.POLYGON;
-                    }
-                    else if (type.toUpperCase() === 'POLYLINE') {
-                        return window.google.maps.drawing.OverlayType.POLYLINE;
-                    }
-                    else if (type.toUpperCase() === 'RECTANGLE') {
-                        return window.google.maps.drawing.OverlayType.RECTANGLE;
-                    }
-                    else if (type.toUpperCase() === 'CIRCLE') {
-                        return window.google.maps.drawing.OverlayType.CIRCLE;
-                    }
-                    else {
-                        return window.google.maps.drawing.OverlayType.MARKER;
+                    switch (type.toUpperCase()) {
+                        case 'POLYGON':
+                            return window.google.maps.drawing.OverlayType.POLYGON;
+                        case 'POLYLINE':
+                            return window.google.maps.drawing.OverlayType.POLYLINE;
+                        case 'RECTANGLE':
+                            return window.google.maps.drawing.OverlayType.RECTANGLE;
+                        case 'CIRCLE':
+                            return window.google.maps.drawing.OverlayType.CIRCLE;
+                        case 'MARKER':
+                            return window.google.maps.drawing.OverlayType.MARKER;
+                        default:
+                            return null;
                     }
                 };
                 GoogleMaps.prototype.drawEnabledChanged = function (newval, oldval) {

@@ -6,7 +6,7 @@ import { EventAggregator } from 'aurelia-event-aggregator';
 import { getLogger } from 'aurelia-logging';
 
 import { Configure } from './configure';
-import { GoogleMapsAPI } from './google-maps-api'
+import { GoogleMapsAPI } from './google-maps-api';
 
 const GM = 'googlemap';
 const BOUNDSCHANGED = `${GM}:bounds_changed`;
@@ -101,7 +101,7 @@ export class GoogleMaps {
         if (!config.get('apiKey') && config.get('apiKey') !== false) {
             logger.error('No API key has been specified.');
         }
-
+        
         this._scriptPromise = this.googleMapsApi.getMapsInstance();
 
         let self: GoogleMaps = this;
@@ -609,7 +609,6 @@ export class GoogleMaps {
             });
         });
     }
-
     /*************************************************************************
      * Google Maps Drawing Manager
      * The below methods are related to the drawing manager, and exposing some
@@ -671,16 +670,19 @@ export class GoogleMaps {
      * @param type 
      */
     getOverlayType(type: any = '') {
-        if (type.toUpperCase() === 'POLYGON') {
-            return (<any>window).google.maps.drawing.OverlayType.POLYGON;
-        } else if (type.toUpperCase() === 'POLYLINE') {
-            return (<any>window).google.maps.drawing.OverlayType.POLYLINE;
-        } else if (type.toUpperCase() === 'RECTANGLE') {
-            return (<any>window).google.maps.drawing.OverlayType.RECTANGLE;
-        } else if (type.toUpperCase() === 'CIRCLE') {
-            return (<any>window).google.maps.drawing.OverlayType.CIRCLE;
-        } else {
-            return (<any>window).google.maps.drawing.OverlayType.MARKER;
+        switch (type.toUpperCase()) {
+            case 'POLYGON':
+                return (<any>window).google.maps.drawing.OverlayType.POLYGON;
+            case 'POLYLINE':
+                return (<any>window).google.maps.drawing.OverlayType.POLYLINE;
+            case 'RECTANGLE':
+                return (<any>window).google.maps.drawing.OverlayType.RECTANGLE;
+            case 'CIRCLE':
+                return (<any>window).google.maps.drawing.OverlayType.CIRCLE;
+            case 'MARKER':
+                return (<any>window).google.maps.drawing.OverlayType.MARKER;
+            default:
+                    return null;
         }
     }
 
