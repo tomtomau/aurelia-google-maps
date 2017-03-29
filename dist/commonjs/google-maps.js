@@ -417,6 +417,12 @@ var GoogleMaps = (function () {
                 var markerLatLng = new window.google.maps.LatLng(parseFloat(marker.latitude), parseFloat(marker.longitude));
                 bounds.extend(markerLatLng);
             }
+            for (var _b = 0, _c = _this._renderedPolygons; _b < _c.length; _b++) {
+                var polygon = _c[_b];
+                polygon.getPath().forEach(function (element) {
+                    bounds.extend(element);
+                });
+            }
             _this.map.fitBounds(bounds);
             var listener = google.maps.event.addListener(_this.map, 'idle', function () {
                 if (_this.map.getZoom() > _this.zoom) {
@@ -577,7 +583,6 @@ var GoogleMaps = (function () {
         }
         for (var _i = 0, splices_2 = splices; _i < splices_2.length; _i++) {
             var splice = splices_2[_i];
-            console.log(splice);
             if (splice.removed.length) {
                 for (var _a = 0, _b = splice.removed; _a < _b.length; _a++) {
                     var removedObj = _b[_a];

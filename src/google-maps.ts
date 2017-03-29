@@ -578,6 +578,12 @@ export class GoogleMaps {
                 bounds.extend(markerLatLng);
             }
 
+            for (let polygon of this._renderedPolygons) {
+                polygon.getPath().forEach(element => {
+                    bounds.extend(element);
+                });
+            }
+
             this.map.fitBounds(bounds);
             let listener = google.maps.event.addListener(this.map, 'idle', () => {
                 if (this.map.getZoom() > this.zoom) {
@@ -824,7 +830,6 @@ export class GoogleMaps {
         }
 
         for (let splice of splices) {
-            console.log(splice);
             if (splice.removed.length) {
                 // Iterate over all the removed markers
                 for (let removedObj of splice.removed) {
