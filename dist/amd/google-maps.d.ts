@@ -56,6 +56,7 @@ export declare class GoogleMaps {
     _locationByAddressMarkers: any;
     drawingManager: any;
     _renderedPolygons: any;
+    _polygonsSubscription: any;
     constructor(element: Element, taskQueue: TaskQueue, config: Configure, bindingEngine: BindingEngine, eventAggregator: EventAggregator, googleMapsApi: GoogleMapsAPI);
     clearMarkers(): void;
     attached(): void;
@@ -90,5 +91,6 @@ export declare class GoogleMaps {
     encodePath(path?: any): any;
     decodePath(polyline: string): any;
     renderPolygon(paths?: any): void;
-    renderPolygonFromPolyString(poly: string): void;
+    polygonsChanged(newValue: any): void;
+    polygonCollectionChange(splices: any): void;
 }

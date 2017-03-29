@@ -64,6 +64,7 @@ var GoogleMaps = (function () {
         this._locationByAddressMarkers = [];
         this.drawingManager = null;
         this._renderedPolygons = [];
+        this._polygonsSubscription = null;
         this.element = element;
         this.taskQueue = taskQueue;
         this.config = config;
@@ -505,7 +506,6 @@ var GoogleMaps = (function () {
             .then(function () {
             if (newval && !oldval) {
                 _this.drawingManager.setMap(_this.map);
-                _this.renderPolygon();
             }
             else if (oldval && !newval) {
                 _this.drawingManager.setMap(null);
@@ -531,15 +531,89 @@ var GoogleMaps = (function () {
     };
     GoogleMaps.prototype.renderPolygon = function (paths) {
         if (paths === void 0) { paths = []; }
+        if (typeof paths === 'string') {
+            paths = this.decodePath(paths);
+        }
         var polygon = new window.google.maps.Polygon({
             paths: paths
         });
         polygon.setMap(this.map);
         this._renderedPolygons.push(polygon);
     };
-    GoogleMaps.prototype.renderPolygonFromPolyString = function (poly) {
-        var paths = this.decodePath(poly);
-        this.renderPolygon(paths);
+    GoogleMaps.prototype.polygonsChanged = function (newValue) {
+        var _this = this;
+        if (this._polygonsSubscription !== null) {
+            this._polygonsSubscription.dispose();
+            for (var _i = 0, _a = this._renderedPolygons; _i < _a.length; _i++) {
+                var polygon = _a[_i];
+                polygon.setMap(null);
+            }
+            this._renderedPolygons = [];
+        }
+        this._polygonsSubscription = this.bindingEngine
+            .collectionObserver(this.polygons)
+            .subscribe(function (splices) { _this.polygonCollectionChange(splices); });
+        this._mapPromise.then(function () {
+            Promise.all(newValue.map(function (polygon) {
+                if (typeof polygon === 'string') {
+                    return _this.decodePath(polygon);
+                }
+                return polygon;
+            })).then(function (polygons) {
+                return Promise.all(polygons.map(_this.renderPolygon.bind(_this)));
+            }).then(function () {
+                _this.taskQueue.queueTask(function () {
+                    _this.zoomToMarkerBounds();
+                });
+            });
+        });
+    };
+    GoogleMaps.prototype.polygonCollectionChange = function (splices) {
+        var _this = this;
+        if (!splices.length) {
+            return;
+        }
+        for (var _i = 0, splices_2 = splices; _i < splices_2.length; _i++) {
+            var splice = splices_2[_i];
+            if (splice.removed.length) {
+                for (var _a = 0, _b = splice.removed; _a < _b.length; _a++) {
+                    var removedObj = _b[_a];
+                    for (var polygonIndex in this._renderedPolygons) {
+                        if (this._renderedPolygons.hasOwnProperty(polygonIndex)) {
+                            var renderedPolygon = this._renderedPolygons[polygonIndex];
+                            var strRendered = void 0, strRemoved = void 0;
+                            if (typeof renderedPolygon === 'object') {
+                                strRendered = this.encodePath(renderedPolygon);
+                            }
+                            else {
+                                strRendered = renderedPolygon;
+                            }
+                            if (typeof removedObj === 'object') {
+                                strRemoved = this.encodePath(removedObj);
+                            }
+                            else {
+                                strRemoved = removedObj;
+                            }
+                            if (strRendered === strRemoved) {
+                                renderedPolygon.setMap(null);
+                                this._renderedPolygons.splice(polygonIndex, 1);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (splice.addedCount) {
+                var addedPolygons = this.polygons.slice(splice.index, splice.index + splice.addedCount);
+                for (var _c = 0, addedPolygons_1 = addedPolygons; _c < addedPolygons_1.length; _c++) {
+                    var addedPolygon = addedPolygons_1[_c];
+                    this.renderPolygon(addedPolygon);
+                }
+            }
+        }
+        this.taskQueue.queueTask(function () {
+            _this.zoomToMarkerBounds();
+        });
     };
     return GoogleMaps;
 }());

@@ -87,6 +87,7 @@ export class GoogleMaps {
     public _locationByAddressMarkers: any = [];
     public drawingManager: any = null;
     public _renderedPolygons: any = [];
+    public _polygonsSubscription: any = null;
 
     constructor(element: Element, taskQueue: TaskQueue, config: Configure, bindingEngine: BindingEngine, eventAggregator: EventAggregator, googleMapsApi: GoogleMapsAPI) {
         this.element = element;
@@ -697,7 +698,6 @@ export class GoogleMaps {
             .then(() => {
                 if (newval && !oldval) {
                     this.drawingManager.setMap(this.map);
-                    this.renderPolygon();
                 } else if (oldval && !newval) {
                     this.drawingManager.setMap(null);
                 }
@@ -746,9 +746,13 @@ export class GoogleMaps {
     /**
      * Render a single polygon on the map and add it to the _renderedPolygons
      * array.
-     * @param paths - paths defining a polygon
+     * @param paths - paths defining a polygon or a string
      */
     renderPolygon(paths: any = [])  {
+        // If the path given was still a string, try and get a path definition
+        if (typeof paths === 'string') {
+            paths = this.decodePath(paths);
+        }
         let polygon = new (<any>window).google.maps.Polygon({
             paths
         });
@@ -758,11 +762,118 @@ export class GoogleMaps {
     }
 
     /**
-     * Render the polygon from an encoded polyline string
-     * @param poly
+     * Observing changes in the entire polygons object. This is critical in
+     * case the user sets polygons to a new empty Array, where we need to
+     * resubscribe Observers and delete all previously rendered polygons.
+     *
+     * @param newValue
      */
-    renderPolygonFromPolyString(poly: string) {
-        let paths = this.decodePath(poly);
-        this.renderPolygon(paths);
+    polygonsChanged(newValue: any) {
+        // If there was a previous subscription
+        if (this._polygonsSubscription !== null) {
+            // Dispose of the subscription
+            this._polygonsSubscription.dispose();
+
+            // Remove all the currently rendered polygons
+            for (let polygon of this._renderedPolygons) {
+                polygon.setMap(null);
+            }
+
+            // And empty the renderMarkers collection
+            this._renderedPolygons = [];
+        }
+
+        // Add the subcription to markers
+        this._polygonsSubscription = this.bindingEngine
+            .collectionObserver(this.polygons)
+            .subscribe((splices) => { this.polygonCollectionChange(splices); });
+
+        // Render all markers again
+        this._mapPromise.then(() => {
+            Promise.all(
+                newValue.map(polygon => {
+                    if (typeof polygon === 'string') {
+                        return this.decodePath(polygon);
+                    }
+                    return polygon;
+                })
+            ).then(polygons => {
+                return Promise.all(polygons.map(this.renderPolygon.bind(this)));
+            }).then(() => {
+                /**
+                 * We queue up a task to update the bounds, because in the case of multiple bound properties changing all at once,
+                 * we need to let Aurelia handle updating the other properties before we actually trigger a re-render of the map
+                 */
+                this.taskQueue.queueTask(() => {
+                    this.zoomToMarkerBounds();
+                });
+            });
+        });
+    }
+
+    /**
+     * Handle the change to the polygon collection. Collection observer returns an array of splices which contains
+     * information about the change to the collection.
+     *
+     * @param splices
+     */
+    polygonCollectionChange(splices: any) {
+        if (!splices.length) {
+            // Collection changed but the splices didn't
+            return;
+        }
+
+        for (let splice of splices) {
+            if (splice.removed.length) {
+                // Iterate over all the removed markers
+                for (let removedObj of splice.removed) {
+                    // Iterate over all the rendered markers to find the one to remove
+                    for (let polygonIndex in this._renderedPolygons) {
+                        if (this._renderedPolygons.hasOwnProperty(polygonIndex)) {
+                            let renderedPolygon = this._renderedPolygons[polygonIndex];
+
+                            // Get string representation
+                            let strRendered, strRemoved;
+                            if (typeof renderedPolygon === 'object') {
+                                strRendered = this.encodePath(renderedPolygon);
+                            } else {
+                                strRendered = renderedPolygon;
+                            }
+                            if (typeof removedObj === 'object') {
+                                strRemoved = this.encodePath(removedObj);
+                            } else {
+                                strRemoved = removedObj;
+                            }
+
+                            // Check based on string representation
+                            if (strRendered === strRemoved) {
+                                // Set the map to null;
+                                renderedPolygon.setMap(null);
+
+                                // Splice out this rendered marker as well
+                                this._renderedPolygons.splice((<any>polygonIndex), 1);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Add the new polygons to the map
+            if (splice.addedCount) {
+                let addedPolygons = this.polygons.slice(splice.index, splice.index + splice.addedCount);
+                for (let addedPolygon of addedPolygons) {
+                    this.renderPolygon(addedPolygon);
+                }
+            }
+        }
+
+        /**
+         * We queue up a task to update the bounds, because in the case of multiple bound properties changing all at once,
+         * we need to let Aurelia handle updating the other properties before we actually trigger a re-render of the map
+         */
+        this.taskQueue.queueTask(() => {
+            this.zoomToMarkerBounds();
+        });
     }
 }
