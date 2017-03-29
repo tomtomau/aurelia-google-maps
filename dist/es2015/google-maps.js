@@ -575,6 +575,7 @@ var GoogleMaps = (function () {
         }
         for (var _i = 0, splices_2 = splices; _i < splices_2.length; _i++) {
             var splice = splices_2[_i];
+            console.log(splice);
             if (splice.removed.length) {
                 for (var _a = 0, _b = splice.removed; _a < _b.length; _a++) {
                     var removedObj = _b[_a];
@@ -583,7 +584,7 @@ var GoogleMaps = (function () {
                             var renderedPolygon = this._renderedPolygons[polygonIndex];
                             var strRendered = void 0, strRemoved = void 0;
                             if (typeof renderedPolygon === 'object') {
-                                strRendered = this.encodePath(renderedPolygon);
+                                strRendered = this.encodePath(renderedPolygon.getPath());
                             }
                             else {
                                 strRendered = renderedPolygon;

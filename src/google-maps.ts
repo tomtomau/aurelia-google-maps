@@ -824,6 +824,7 @@ export class GoogleMaps {
         }
 
         for (let splice of splices) {
+            console.log(splice);
             if (splice.removed.length) {
                 // Iterate over all the removed markers
                 for (let removedObj of splice.removed) {
@@ -835,7 +836,7 @@ export class GoogleMaps {
                             // Get string representation
                             let strRendered, strRemoved;
                             if (typeof renderedPolygon === 'object') {
-                                strRendered = this.encodePath(renderedPolygon);
+                                strRendered = this.encodePath(renderedPolygon.getPath());
                             } else {
                                 strRendered = renderedPolygon;
                             }
