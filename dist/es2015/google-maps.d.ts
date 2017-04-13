@@ -47,6 +47,8 @@ export declare class GoogleMaps {
     drawMode: string;
     drawOverlayCompleteEvent: any;
     polygons: any;
+    drawingControl: true;
+    drawingControlOptions: {};
     map: any;
     _renderedMarkers: any;
     _markersSubscription: any;
@@ -90,7 +92,7 @@ export declare class GoogleMaps {
     drawModeChanged(newval?: any): void;
     encodePath(path?: any): any;
     decodePath(polyline: string): any;
-    renderPolygon(paths?: any): void;
+    renderPolygon(polygonObject?: any): void;
     polygonsChanged(newValue: any): void;
     polygonCollectionChange(splices: any): void;
 }

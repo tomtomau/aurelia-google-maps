@@ -37,6 +37,7 @@ define(["require", "exports", "aurelia-dependency-injection", "aurelia-templatin
     };
     var GoogleMaps = (function () {
         function GoogleMaps(element, taskQueue, config, bindingEngine, eventAggregator, googleMapsApi) {
+            this.validMarkers = [];
             this.address = null;
             this.longitude = 0;
             this.latitude = 0;
@@ -456,12 +457,16 @@ define(["require", "exports", "aurelia-dependency-injection", "aurelia-templatin
                     return Promise.resolve();
                 var config = Object.assign({}, {
                     drawingMode: _this.getOverlayType(_this.drawMode),
-                    drawingControl: _this.drawEnabled
+                    drawingControl: _this.drawingControl,
+                    drawingControlOptions: _this.drawingControlOptions
                 }, options);
                 _this.drawingManager = new window.google.maps.drawing.DrawingManager(config);
                 _this.drawingManager.addListener('overlaycomplete', function (evt) {
                     var changeEvent;
-                    Object.assign(evt, { encode: _this.encodePath(evt.overlay.getPath()) });
+                    Object.assign(evt, {
+                        path: evt.overlay.getPath(),
+                        encode: _this.encodePath(evt.overlay.getPath())
+                    });
                     if (window.CustomEvent) {
                         changeEvent = new CustomEvent('map-overlay-complete', {
                             detail: evt,
@@ -530,14 +535,15 @@ define(["require", "exports", "aurelia-dependency-injection", "aurelia-templatin
         GoogleMaps.prototype.decodePath = function (polyline) {
             return window.google.maps.geometry.encoding.decodePath(polyline);
         };
-        GoogleMaps.prototype.renderPolygon = function (paths) {
-            if (paths === void 0) { paths = []; }
+        GoogleMaps.prototype.renderPolygon = function (polygonObject) {
+            if (polygonObject === void 0) { polygonObject = []; }
+            var paths = polygonObject.paths;
+            if (!paths)
+                return;
             if (typeof paths === 'string') {
                 paths = this.decodePath(paths);
             }
-            var polygon = new window.google.maps.Polygon({
-                paths: paths
-            });
+            var polygon = new window.google.maps.Polygon(Object.assign({}, polygonObject, { paths: paths }));
             polygon.setMap(this.map);
             this._renderedPolygons.push(polygon);
         };
@@ -590,7 +596,12 @@ define(["require", "exports", "aurelia-dependency-injection", "aurelia-templatin
                                     strRendered = renderedPolygon;
                                 }
                                 if (typeof removedObj === 'object') {
-                                    strRemoved = this.encodePath(removedObj);
+                                    if (typeof removedObj.paths !== "string") {
+                                        strRemoved = this.encodePath(removedObj.paths);
+                                    }
+                                    else {
+                                        strRemoved = removedObj.paths;
+                                    }
                                 }
                                 else {
                                     strRemoved = removedObj;
@@ -674,6 +685,14 @@ define(["require", "exports", "aurelia-dependency-injection", "aurelia-templatin
         aurelia_templating_1.bindable,
         __metadata("design:type", Object)
     ], GoogleMaps.prototype, "polygons", void 0);
+    __decorate([
+        aurelia_templating_1.bindable,
+        __metadata("design:type", Boolean)
+    ], GoogleMaps.prototype, "drawingControl", void 0);
+    __decorate([
+        aurelia_templating_1.bindable,
+        __metadata("design:type", Object)
+    ], GoogleMaps.prototype, "drawingControlOptions", void 0);
     GoogleMaps = __decorate([
         aurelia_templating_1.noView(),
         aurelia_templating_1.customElement('google-map'),

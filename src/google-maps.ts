@@ -60,7 +60,7 @@ export class GoogleMaps {
     private bindingEngine: BindingEngine;
     private eventAggregator: EventAggregator;
     private googleMapsApi: GoogleMapsAPI;
-    private validMarkers: LatLongMarker[];
+    private validMarkers: LatLongMarker[] = [];
     private _geocoder: any;
 
     @bindable address = null;
@@ -77,6 +77,8 @@ export class GoogleMaps {
     @bindable drawMode = 'MARKER';
     @bindable drawOverlayCompleteEvent = null;
     @bindable polygons: any = [];
+    @bindable drawingControl: true;
+    @bindable drawingControlOptions: {};
 
     public map: any = null;
     public _renderedMarkers: any = [];
@@ -636,7 +638,8 @@ export class GoogleMaps {
             // Set the config defaults, and override if we were given any configs
             const config = Object.assign({}, {
                 drawingMode: this.getOverlayType(this.drawMode),
-                drawingControl: this.drawEnabled
+                drawingControl: this.drawingControl,
+                drawingControlOptions: this.drawingControlOptions
             }, options);
             this.drawingManager = new (<any>window).google.maps.drawing.DrawingManager(config);
 
@@ -645,7 +648,10 @@ export class GoogleMaps {
             this.drawingManager.addListener('overlaycomplete', evt => {
                 let changeEvent;
                 // Add the encoded polyline to the event
-                Object.assign(evt, { encode: this.encodePath(evt.overlay.getPath()) });
+                Object.assign(evt, {
+                    path: evt.overlay.getPath(),
+                    encode: this.encodePath(evt.overlay.getPath())
+                });
                 if ((<any>window).CustomEvent) {
                     changeEvent = new CustomEvent('map-overlay-complete', {
                         detail: evt,
@@ -737,7 +743,7 @@ export class GoogleMaps {
     }
 
     /**
-     * Decode the given Polyline encoded string to be an arry of Paths
+     * Decode the given Polyline encoded string to be an array of Paths
      * more info: https://developers.google.com/maps/documentation/utilities/polylineutility
      * @param polyline
      */
@@ -752,16 +758,21 @@ export class GoogleMaps {
     /**
      * Render a single polygon on the map and add it to the _renderedPolygons
      * array.
-     * @param paths - paths defining a polygon or a string
+     * @param polygonObject - paths defining a polygon or a string
      */
-    renderPolygon(paths: any = [])  {
+    renderPolygon(polygonObject: any = [])  {
+        let paths = polygonObject.paths;
+
+        if (!paths) return;
+
         // If the path given was still a string, try and get a path definition
         if (typeof paths === 'string') {
             paths = this.decodePath(paths);
         }
-        let polygon = new (<any>window).google.maps.Polygon({
-            paths
-        });
+
+        let polygon = new (<any>window).google.maps.Polygon(
+            Object.assign({}, polygonObject, { paths })
+        );
 
         polygon.setMap(this.map);
         this._renderedPolygons.push(polygon);
@@ -846,7 +857,11 @@ export class GoogleMaps {
                                 strRendered = renderedPolygon;
                             }
                             if (typeof removedObj === 'object') {
-                                strRemoved = this.encodePath(removedObj);
+                                if (typeof removedObj.paths !== "string") {
+                                    strRemoved = this.encodePath(removedObj.paths);
+                                } else {
+                                    strRemoved = removedObj.paths;
+                                }
                             } else {
                                 strRemoved = removedObj;
                             }
