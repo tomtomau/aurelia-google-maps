@@ -514,7 +514,7 @@ define(["require", "exports", "aurelia-dependency-injection", "aurelia-templatin
                     _this.drawingManager.setMap(_this.map);
                 }
                 else if (oldval && !newval) {
-                    _this.drawingManager.setMap(null);
+                    _this.destroyDrawingManager();
                 }
             });
         };

@@ -521,7 +521,7 @@ var GoogleMaps = (function () {
                 _this.drawingManager.setMap(_this.map);
             }
             else if (oldval && !newval) {
-                _this.drawingManager.setMap(null);
+                _this.destroyDrawingManager();
             }
         });
     };

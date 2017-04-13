@@ -711,7 +711,7 @@ export class GoogleMaps {
                 if (newval && !oldval) {
                     this.drawingManager.setMap(this.map);
                 } else if (oldval && !newval) {
-                    this.drawingManager.setMap(null);
+                    this.destroyDrawingManager();
                 }
             });
     }
