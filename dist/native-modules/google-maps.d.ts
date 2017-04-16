@@ -3,7 +3,7 @@ import { BindingEngine } from 'aurelia-binding';
 import { EventAggregator } from 'aurelia-event-aggregator';
 import { Configure } from './configure';
 import { GoogleMapsAPI } from './google-maps-api';
-export interface BaseMarker {
+export interface Marker {
     icon?: string;
     label?: string;
     title?: string;
@@ -15,15 +15,9 @@ export interface BaseMarker {
         position?: number;
         maxWidth?: number;
     };
-}
-export interface AddressMarker extends BaseMarker {
-    address: string;
-}
-export interface LatLongMarker extends BaseMarker {
     latitude: number | string;
     longitude: number | string;
 }
-export declare type Marker = AddressMarker | LatLongMarker;
 export declare class GoogleMaps {
     private element;
     private taskQueue;
@@ -31,9 +25,7 @@ export declare class GoogleMaps {
     private bindingEngine;
     private eventAggregator;
     private googleMapsApi;
-    private validMarkers;
     private _geocoder;
-    address: any;
     longitude: number;
     latitude: number;
     zoom: number;
@@ -50,7 +42,7 @@ export declare class GoogleMaps {
     drawingControl: true;
     drawingControlOptions: {};
     map: any;
-    _renderedMarkers: any;
+    _renderedMarkers: any[];
     _markersSubscription: any;
     _scriptPromise: Promise<any> | any;
     _mapPromise: Promise<any> | any;
@@ -64,18 +56,13 @@ export declare class GoogleMaps {
     attached(): void;
     sendBoundsEvent(): void;
     sendApiLoadedEvent(): void;
-    renderMarker(marker: LatLongMarker): Promise<void>;
-    geocodeAddress(address: string): void;
-    addressMarkerToMarker(marker: AddressMarker): Promise<LatLongMarker>;
-    private geocode(address);
-    private readonly geocoder;
+    renderMarker(marker: Marker): Promise<void>;
     getCurrentPosition(): any;
     setOptions(options: any): void;
     createMarker(options: any): any;
     getCenter(): void;
     setCenter(latLong: any): void;
     updateCenter(): void;
-    addressChanged(newValue: any): void;
     latitudeChanged(): void;
     longitudeChanged(): void;
     zoomChanged(newValue: any): void;
