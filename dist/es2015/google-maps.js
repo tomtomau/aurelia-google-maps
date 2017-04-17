@@ -399,7 +399,7 @@ var GoogleMaps = (function () {
             _this.drawingManager.addListener('overlaycomplete', function (evt) {
                 var changeEvent;
                 Object.assign(evt, {
-                    path: evt.overlay.getPath(),
+                    path: evt.overlay.getPath().getArray().map(function (x) { return { latitude: x.lat(), longitude: x.lng() }; }),
                     encode: _this.encodePath(evt.overlay.getPath())
                 });
                 if (window.CustomEvent) {
@@ -475,8 +475,10 @@ var GoogleMaps = (function () {
         var paths = polygonObject.paths;
         if (!paths)
             return;
-        if (typeof paths === 'string') {
-            paths = this.decodePath(paths);
+        if (Array.isArray(paths)) {
+            paths = paths.map(function (x) {
+                return new window.google.maps.LatLng(x.latitude, x.longitude);
+            });
         }
         var polygon = new window.google.maps.Polygon(Object.assign({}, polygonObject, { paths: paths }));
         polygon.setMap(this.map);
@@ -524,23 +526,11 @@ var GoogleMaps = (function () {
                         if (this._renderedPolygons.hasOwnProperty(polygonIndex)) {
                             var renderedPolygon = this._renderedPolygons[polygonIndex];
                             var strRendered = void 0, strRemoved = void 0;
-                            if (typeof renderedPolygon === 'object') {
-                                strRendered = this.encodePath(renderedPolygon.getPath());
-                            }
-                            else {
-                                strRendered = renderedPolygon;
-                            }
-                            if (typeof removedObj === 'object') {
-                                if (typeof removedObj.paths !== "string") {
-                                    strRemoved = this.encodePath(removedObj.paths);
-                                }
-                                else {
-                                    strRemoved = removedObj.paths;
-                                }
-                            }
-                            else {
-                                strRemoved = removedObj;
-                            }
+                            strRendered = this.encodePath(renderedPolygon.getPath());
+                            var removedPaths = removedObj.paths.map(function (x) {
+                                return new window.google.maps.LatLng(x.latitude, x.longitude);
+                            });
+                            strRemoved = this.encodePath(removedPaths);
                             if (strRendered === strRemoved) {
                                 renderedPolygon.setMap(null);
                                 this._renderedPolygons.splice(polygonIndex, 1);

@@ -559,7 +559,7 @@ export class GoogleMaps {
                 let changeEvent;
                 // Add the encoded polyline to the event
                 Object.assign(evt, {
-                    path: evt.overlay.getPath(),
+                    path: evt.overlay.getPath().getArray().map(x => { return { latitude: x.lat(), longitude: x.lng() }}),
                     encode: this.encodePath(evt.overlay.getPath())
                 });
                 if ((<any>window).CustomEvent) {
@@ -675,9 +675,10 @@ export class GoogleMaps {
 
         if (!paths) return;
 
-        // If the path given was still a string, try and get a path definition
-        if (typeof paths === 'string') {
-            paths = this.decodePath(paths);
+        if (Array.isArray(paths)) {
+            paths = paths.map(x => {
+                return new (<any>window).google.maps.LatLng(x.latitude, x.longitude);
+            });
         }
 
         let polygon = new (<any>window).google.maps.Polygon(
@@ -761,20 +762,14 @@ export class GoogleMaps {
 
                             // Get string representation
                             let strRendered, strRemoved;
-                            if (typeof renderedPolygon === 'object') {
-                                strRendered = this.encodePath(renderedPolygon.getPath());
-                            } else {
-                                strRendered = renderedPolygon;
-                            }
-                            if (typeof removedObj === 'object') {
-                                if (typeof removedObj.paths !== "string") {
-                                    strRemoved = this.encodePath(removedObj.paths);
-                                } else {
-                                    strRemoved = removedObj.paths;
-                                }
-                            } else {
-                                strRemoved = removedObj;
-                            }
+
+                            strRendered = this.encodePath(renderedPolygon.getPath());
+
+                            let removedPaths = removedObj.paths.map(x => {
+                                return new (<any>window).google.maps.LatLng(x.latitude, x.longitude);
+                            });
+
+                            strRemoved = this.encodePath(removedPaths);
 
                             // Check based on string representation
                             if (strRendered === strRemoved) {
