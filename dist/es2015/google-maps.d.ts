@@ -26,6 +26,7 @@ export declare class GoogleMaps {
     private eventAggregator;
     private googleMapsApi;
     private _geocoder;
+    private _currentInfoWindow;
     longitude: number;
     latitude: number;
     zoom: number;

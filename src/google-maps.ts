@@ -44,6 +44,7 @@ export class GoogleMaps {
     private eventAggregator: EventAggregator;
     private googleMapsApi: GoogleMapsAPI;
     private _geocoder: any;
+    private _currentInfoWindow: any = null;
 
     @bindable longitude: number = 0;
     @bindable latitude: number = 0;
@@ -172,6 +173,11 @@ export class GoogleMaps {
 
                 this.element.dispatchEvent(changeEvent);
                 this.eventAggregator.publish(CLICK, e);
+
+                // If there is an infoWindow open, close it
+                if (this._currentInfoWindow) {
+                    this._currentInfoWindow.close();
+                }
             });
 
             /**
@@ -227,9 +233,14 @@ export class GoogleMaps {
                 /* add event listener for click on the marker,
                  * the event payload is the marker itself */
                 createdMarker.addListener('click', () => {
+                    if (this._currentInfoWindow) {
+                        this._currentInfoWindow.close();
+                    }
                     if (!createdMarker.infoWindow) {
+                        this._currentInfoWindow = null;
                         this.eventAggregator.publish(MARKERCLICK, createdMarker);
                     } else {
+                        this._currentInfoWindow = createdMarker.infoWindow;
                         createdMarker.infoWindow.open(this.map, createdMarker);
                     }
                 });
@@ -276,6 +287,17 @@ export class GoogleMaps {
                     });
                     createdMarker.infoWindow.addListener('domready', () => {
                         this.eventAggregator.publish(INFOWINDOWDOMREADY, createdMarker.infoWindow);
+                        let changeEvent;
+                        if ((<any>window).CustomEvent) {
+                            changeEvent = new CustomEvent('info-window-show', {
+                                detail: createdMarker.infoWindow,
+                                bubbles: true
+                            });
+                        } else {
+                            changeEvent = document.createEvent('CustomEvent');
+                            changeEvent.initCustomEvent('info-window-show', true, true, { data: createdMarker.infoWindow });
+                        }
+                        this.element.dispatchEvent(changeEvent);
                     });
                 }
 

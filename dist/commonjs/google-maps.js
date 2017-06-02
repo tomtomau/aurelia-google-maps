@@ -30,6 +30,7 @@ var OVERLAYCOMPLETE = GM + ":draw:overlaycomplete";
 var logger = aurelia_logging_1.getLogger('aurelia-google-maps');
 var GoogleMaps = (function () {
     function GoogleMaps(element, taskQueue, config, bindingEngine, eventAggregator, googleMapsApi) {
+        this._currentInfoWindow = null;
         this.longitude = 0;
         this.latitude = 0;
         this.zoom = 8;
@@ -133,6 +134,9 @@ var GoogleMaps = (function () {
                 }
                 _this.element.dispatchEvent(changeEvent);
                 _this.eventAggregator.publish(CLICK, e);
+                if (_this._currentInfoWindow) {
+                    _this._currentInfoWindow.close();
+                }
             });
             _this.map.addListener('dragend', function () {
                 _this.sendBoundsEvent();
@@ -160,10 +164,15 @@ var GoogleMaps = (function () {
                 position: markerLatLng
             }).then(function (createdMarker) {
                 createdMarker.addListener('click', function () {
+                    if (_this._currentInfoWindow) {
+                        _this._currentInfoWindow.close();
+                    }
                     if (!createdMarker.infoWindow) {
+                        _this._currentInfoWindow = null;
                         _this.eventAggregator.publish(MARKERCLICK, createdMarker);
                     }
                     else {
+                        _this._currentInfoWindow = createdMarker.infoWindow;
                         createdMarker.infoWindow.open(_this.map, createdMarker);
                     }
                 });
@@ -199,6 +208,18 @@ var GoogleMaps = (function () {
                     });
                     createdMarker.infoWindow.addListener('domready', function () {
                         _this.eventAggregator.publish(INFOWINDOWDOMREADY, createdMarker.infoWindow);
+                        var changeEvent;
+                        if (window.CustomEvent) {
+                            changeEvent = new CustomEvent('info-window-show', {
+                                detail: createdMarker.infoWindow,
+                                bubbles: true
+                            });
+                        }
+                        else {
+                            changeEvent = document.createEvent('CustomEvent');
+                            changeEvent.initCustomEvent('info-window-show', true, true, { data: createdMarker.infoWindow });
+                        }
+                        _this.element.dispatchEvent(changeEvent);
                     });
                 }
                 if (marker.custom) {
