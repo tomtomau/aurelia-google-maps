@@ -308,6 +308,21 @@ export class GoogleMaps {
 
                 // Add it the array of rendered markers
                 this._renderedMarkers.push(createdMarker);
+
+                // Send up and event to let the parent know a new marker has been rendered
+                let newMarkerEvent;
+                if ((<any>window).CustomEvent) {
+                    newMarkerEvent = new CustomEvent('marker-rendered', {
+                        detail: {
+                            createdMarker, marker
+                        },
+                        bubbles: true
+                    });
+                } else {
+                    newMarkerEvent = document.createEvent('CustomEvent');
+                    newMarkerEvent.initCustomEvent('marker-rendered', true, true, { data: { createdMarker, marker } });
+                }
+                this.element.dispatchEvent(newMarkerEvent);
             });
         });
     }

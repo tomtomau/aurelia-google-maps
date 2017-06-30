@@ -226,6 +226,20 @@ var GoogleMaps = (function () {
                     createdMarker.custom = marker.custom;
                 }
                 _this._renderedMarkers.push(createdMarker);
+                var newMarkerEvent;
+                if (window.CustomEvent) {
+                    newMarkerEvent = new CustomEvent('marker-rendered', {
+                        detail: {
+                            createdMarker: createdMarker, marker: marker
+                        },
+                        bubbles: true
+                    });
+                }
+                else {
+                    newMarkerEvent = document.createEvent('CustomEvent');
+                    newMarkerEvent.initCustomEvent('marker-rendered', true, true, { data: { createdMarker: createdMarker, marker: marker } });
+                }
+                _this.element.dispatchEvent(newMarkerEvent);
             });
         });
     };
