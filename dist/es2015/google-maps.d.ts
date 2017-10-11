@@ -8,6 +8,7 @@ export declare class Events {
     static CLICK: string;
     static INFOWINDOWDOMREADY: string;
     static MARKERCLICK: string;
+    static MARKERCLICKEVENT: string;
     static MARKERMOUSEOVER: string;
     static MARKERMOUSEOUT: string;
     static POLYGONCLICK: string;

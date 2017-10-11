@@ -25,6 +25,7 @@ var Events = (function () {
     Events.CLICK = GM + ":click";
     Events.INFOWINDOWDOMREADY = GM + ":infowindow:domready";
     Events.MARKERCLICK = GM + ":marker:click";
+    Events.MARKERCLICKEVENT = "marker-click";
     Events.MARKERMOUSEOVER = GM + ":marker:mouse_over";
     Events.MARKERMOUSEOUT = GM + ":marker:mouse_out";
     Events.POLYGONCLICK = GM + ":polygon:click";
@@ -168,6 +169,7 @@ var GoogleMaps = (function () {
             }).then(function (createdMarker) {
                 createdMarker.addListener('click', function () {
                     _this.eventAggregator.publish(Events.MARKERCLICK, createdMarker);
+                    dispatchEvent(Events.MARKERCLICKEVENT, { marker: createdMarker }, _this.element);
                     if (!_this.autoInfoWindow)
                         return;
                     if (_this._currentInfoWindow) {

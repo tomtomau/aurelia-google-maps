@@ -16,6 +16,7 @@ export class Events {
     static CLICK = `${GM}:click`;
     static INFOWINDOWDOMREADY = `${GM}:infowindow:domready`;
     static MARKERCLICK = `${GM}:marker:click`;
+    static MARKERCLICKEVENT = `marker-click`;
     static MARKERMOUSEOVER = `${GM}:marker:mouse_over`;
     static MARKERMOUSEOUT = `${GM}:marker:mouse_out`;
 
@@ -238,6 +239,7 @@ export class GoogleMaps {
                  * the event payload is the marker itself */
                 createdMarker.addListener('click', () => {
                     this.eventAggregator.publish(Events.MARKERCLICK, createdMarker);
+                    dispatchEvent(Events.MARKERCLICKEVENT, { marker: createdMarker }, this.element);
 
                     // Only continue if there autoInfoWindow is enabled
                     if (!this.autoInfoWindow) return;
