@@ -239,7 +239,7 @@ export class GoogleMaps {
                  * the event payload is the marker itself */
                 createdMarker.addListener('click', () => {
                     this.eventAggregator.publish(Events.MARKERCLICK, createdMarker);
-                    dispatchEvent(Events.MARKERCLICKEVENT, { marker: createdMarker }, this.element);
+                    dispatchEvent(Events.MARKERCLICKEVENT, { marker }, this.element);
 
                     // Only continue if there autoInfoWindow is enabled
                     if (!this.autoInfoWindow) return;

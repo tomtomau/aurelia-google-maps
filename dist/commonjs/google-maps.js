@@ -169,7 +169,7 @@ var GoogleMaps = (function () {
             }).then(function (createdMarker) {
                 createdMarker.addListener('click', function () {
                     _this.eventAggregator.publish(Events.MARKERCLICK, createdMarker);
-                    dispatchEvent(Events.MARKERCLICKEVENT, { marker: createdMarker }, _this.element);
+                    dispatchEvent(Events.MARKERCLICKEVENT, { marker: marker }, _this.element);
                     if (!_this.autoInfoWindow)
                         return;
                     if (_this._currentInfoWindow) {
